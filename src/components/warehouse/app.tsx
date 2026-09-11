@@ -114,7 +114,7 @@ export function WarehouseApp() {
           </label>
         </div>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-white/10 bg-navy-deep/80 px-2">
+        <nav aria-label="Main navigation" className="mobile-scroll-x flex gap-1 overflow-x-auto border-b border-white/10 bg-navy-deep/80 px-2">
           {visibleTabs.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -309,7 +309,7 @@ function SyncBar() {
         </span>
       ) : null}
       {lastSuccessAt > 0 ? (
-        <span className="opacity-70">
+        <span className="mobile-hide-xs opacity-70">
           {t(lang, "lastSync")}: {new Date(lastSuccessAt).toLocaleTimeString(lang === "ar" ? "ar-EG" : lang)}
         </span>
       ) : null}
