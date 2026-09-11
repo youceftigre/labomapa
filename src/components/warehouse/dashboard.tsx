@@ -43,7 +43,7 @@ export function DashboardPanel() {
         {entries.length === 0 ? (
           <p className="py-8 text-center text-muted">{t(lang, "noResults")}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:grid-cols-5 md:grid-cols-6">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-6">
             {entries.map(([name, item]) => (
               <article
                 key={name}
