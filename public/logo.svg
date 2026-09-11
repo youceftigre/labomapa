@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-label="MAPA">
+  <rect width="480" height="120" rx="14" fill="#009FE3"/>
+  <path fill="#ffffff" d="M38 88V32h18l24 38 24-38h18v56h-16V52L82 88h-8L50 52v36H38z"/>
+  <text x="168" y="76" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700" letter-spacing="6">MAPA</text>
+</svg>
