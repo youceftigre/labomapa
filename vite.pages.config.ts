@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   base: "/labomapa/",
+  root: "pages",
   plugins: [react(), tailwindcss()],
   build: {
     outDir: "dist-pages",
