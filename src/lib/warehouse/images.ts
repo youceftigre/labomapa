@@ -1,9 +1,10 @@
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_SOURCE_DIMENSION = 12_000;
-/** Mobile-friendly defaults: small files, faster upload, and lower Storage usage. */
+/** Mobile-first defaults: small files, fast uploads, and lower storage usage. */
 const DEFAULT_MAX_DIM = 480;
 const DEFAULT_QUALITY = 0.55;
 const MAX_UPLOAD_BYTES = 350 * 1024;
+const MIN_OUTPUT_DIM = 280;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function canvasToJpeg(
@@ -25,6 +26,36 @@ function canvasToJpeg(
   ctx.fillRect(0, 0, width, height);
   ctx.drawImage(img, 0, 0, width, height);
   return canvas.toDataURL("image/jpeg", quality);
+}
+
+function dataUrlBytes(dataUrl: string) {
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return Number.POSITIVE_INFINITY;
+  return Math.floor((dataUrl.length - comma - 1) * 0.75);
+}
+
+/**
+ * Re-encode progressively until the image fits the mobile upload budget.
+ * This prevents large camera photos from being saved only in one browser's
+ * local cache when Firestore rejects an oversized document.
+ */
+function compressLoadedImage(
+  img: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  maxDim = DEFAULT_MAX_DIM,
+  quality = DEFAULT_QUALITY,
+) {
+  let currentDim = Math.min(maxDim, Math.max(sourceWidth, sourceHeight));
+  let currentQuality = quality;
+  let result = canvasToJpeg(img, sourceWidth, sourceHeight, currentDim, currentQuality);
+
+  for (let pass = 0; pass < 5 && dataUrlBytes(result) > MAX_UPLOAD_BYTES; pass += 1) {
+    currentQuality = Math.max(0.38, currentQuality - 0.06);
+    currentDim = Math.max(MIN_OUTPUT_DIM, Math.round(currentDim * 0.82));
+    result = canvasToJpeg(img, sourceWidth, sourceHeight, currentDim, currentQuality);
+  }
+  return result;
 }
 
 export function compressImage(
@@ -58,7 +89,7 @@ export function compressImage(
         return;
       }
       try {
-        const result = canvasToJpeg(img, sourceWidth, sourceHeight, maxDim, quality);
+        const result = compressLoadedImage(img, sourceWidth, sourceHeight, maxDim, quality);
         cleanup();
         resolve(result);
       } catch (err) {
@@ -74,10 +105,7 @@ export function compressImage(
   });
 }
 
-/**
- * Normalize every existing data URL before upload. Even small images are
- * recompressed so PNGs and large camera images do not bypass the upload limit.
- */
+/** Normalize every existing data URL before upload. */
 export function compressDataUrl(
   dataUrl: string,
   maxDim = DEFAULT_MAX_DIM,
@@ -96,15 +124,7 @@ export function compressDataUrl(
           resolve(dataUrl);
           return;
         }
-        const compressed = canvasToJpeg(img, sourceWidth, sourceHeight, maxDim, quality);
-        const compressedBytes = Math.floor((compressed.length * 3) / 4);
-        // Use a second pass for unusually detailed images so Firebase receives
-        // a predictably small payload on the free plan.
-        resolve(
-          compressedBytes > MAX_UPLOAD_BYTES
-            ? canvasToJpeg(img, sourceWidth, sourceHeight, 560, 0.5)
-            : compressed,
-        );
+        resolve(compressLoadedImage(img, sourceWidth, sourceHeight, maxDim, quality));
       } catch {
         resolve(dataUrl);
       }

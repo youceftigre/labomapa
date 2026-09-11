@@ -21,6 +21,7 @@ export function EditModal() {
   const [unit, setUnit] = useState("");
   const [minQty, setMinQty] = useState("10");
   const [img, setImg] = useState("");
+  const [compressing, setCompressing] = useState(false);
   const [section, setSection] = useState("office");
 
   useEffect(() => {
@@ -36,11 +37,14 @@ export function EditModal() {
 
   async function onPick(file: File | undefined) {
     if (!file) return;
+    setCompressing(true);
     try {
       setImg(await compressImage(file));
     } catch (err) {
       const code = String((err as Error).message);
       showToast(t(lang, code === "image-size" ? "imageTooLarge" : "imageInvalid"), "error");
+    } finally {
+      setCompressing(false);
     }
   }
 
@@ -85,7 +89,8 @@ export function EditModal() {
                 <input value={section} onChange={(e) => setSection(e.target.value)} />
               </div>
               <div className="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {img ? (
+                {compressing ? <span className="text-xs text-muted">جاري ضغط الصورة…</span> : null}
+                {img && !compressing ? (
                   <img
                     src={img}
                     alt={`${t(lang, "imageAlt")}: ${ar || fr || en || editingKey}`}
@@ -110,7 +115,7 @@ export function EditModal() {
               <button
                 type="button"
                 className="primary-btn"
-                disabled={submitting}
+                disabled={submitting || compressing}
                 onClick={() =>
                   void saveEdit({
                     key: editingKey,

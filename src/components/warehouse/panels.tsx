@@ -444,6 +444,7 @@ export function ManagePanel() {
   const [unit, setUnit] = useState("");
   const [minQty, setMinQty] = useState("10");
   const [img, setImg] = useState("");
+  const [compressing, setCompressing] = useState(false);
   const [section, setSection] = useState("office");
 
   const entries = Object.entries(inventory)
@@ -457,11 +458,14 @@ export function ManagePanel() {
 
   async function onPick(file: File | undefined) {
     if (!file) return;
+    setCompressing(true);
     try {
       setImg(await compressImage(file));
     } catch (err) {
       const code = String((err as Error).message);
       showToast(t(lang, code === "image-size" ? "imageTooLarge" : "imageInvalid"), "error");
+    } finally {
+      setCompressing(false);
     }
   }
 
@@ -526,10 +530,11 @@ export function ManagePanel() {
               onChange={(e) => void onPick(e.target.files?.[0])}
             />
           </label>
-          {img ? <img src={img} alt="" className="size-16 rounded-md border border-line object-cover" /> : null}
+          {compressing ? <span className="text-xs text-muted">جاري ضغط الصورة…</span> : null}
+          {img && !compressing ? <img src={img} alt="" className="size-16 rounded-md border border-line object-cover" /> : null}
         </div>
         <p className="mt-2 text-xs text-muted">{t(lang, "imagesHint")}</p>
-        <button type="button" className="primary-btn max-w-xs" disabled={submitting} onClick={() => void onAdd()}>
+        <button type="button" className="primary-btn max-w-xs" disabled={submitting || compressing} onClick={() => void onAdd()}>
           {t(lang, "btnAdd")}
         </button>
       </div>
